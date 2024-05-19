@@ -12,6 +12,12 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+#migrations(when working in teams its good to keep migration files but in this Exams case no)
+migrations
+#db
+dev.db
+dev.db-journal
+
 # OS
 .DS_Store
 

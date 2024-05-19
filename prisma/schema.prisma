@@ -5,28 +5,28 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
   provider = "sqlite"
-  //url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id    String     @default(uuid()) @id
-  email String  @unique
-  username  String?
+  id       String @id @default(uuid())
+  email    String @unique
+  username String @unique
   password String
-  tasks Task[]
+  tasks    Task[]
 }
 
 model Task {
-  id        String      @default(uuid()) @id
-  title     String      @db.VarChar(100)
-  description   String? @db.VarChar(500)
-  completed Boolean? @default(false)
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  Int?
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  completed   Boolean? @default(false)
+  authorId    String?
+  author      User?    @relation(fields: [authorId], references: [id])
 }
