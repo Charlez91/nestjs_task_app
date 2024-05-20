@@ -1,11 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { PrismaService } from "src/prisma_service";
+import { PrismaService } from "src/prisma_service/prisma.service";
 import { validate } from "class-validator";
 import { ITasksRO, ITaskRO, ITaskData } from "./task.interface";
 import { CreateTaskDto, UpdateTaskDto } from "./dto";
 //import { UserService } from "src/user/user.service";
 import { Task } from "@prisma/client";
-import { TaskGateway } from "./task.gateway";
+//import { TaskGateway } from "./task.gateway";
 
 
 /**
@@ -16,7 +16,7 @@ export class TaskService{
     constructor(
         private readonly prisma:PrismaService,
         //private readonly userService:UserService
-        private readonly taskGateway:TaskGateway
+        //private readonly taskGateway:TaskGateway
     ){}
 
     async findAll(
@@ -117,7 +117,7 @@ export class TaskService{
                 data
             });
             // Emit the task created event
-            this.taskGateway.emitTaskCreated(task);
+            //this.taskGateway.emitTaskCreated(task);
             return this.buildTaskRO(task!)
         }
     }
@@ -161,7 +161,7 @@ export class TaskService{
             },
             data:taskData
         });
-        this.taskGateway.emitTaskCreated(updatedTask);
+        //this.taskGateway.emitTaskCreated(updatedTask);
         return this.buildTaskRO(updatedTask!);
     }
 

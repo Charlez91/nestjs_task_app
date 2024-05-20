@@ -15,8 +15,8 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return "<h1>Welcome to the Niyo Task Management App</h1>"', () => {
+      expect(appController.getHello()).toBe('<h1>Welcome to the Niyo Task Management App</h1>');
     });
   });
 });

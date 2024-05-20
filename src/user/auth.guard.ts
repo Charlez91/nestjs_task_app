@@ -11,14 +11,15 @@ export class JwtAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const client: Socket = context.switchToWs().getClient<Socket>();
-    const authHeaders = client.handshake.headers.authorization;
+    const authHeaders = client.handshake.query.token;
     if (!authHeaders) {
       throw new UnauthorizedException('No token provided');
     };
-    const token = (authHeaders as string).split(' ')[1];
+    console.log(authHeaders);
+    //const token = (authHeaders as string).split(' ')[1];
 
     try {
-      const decoded:any = verify(token, SECRET);
+      const decoded:any = verify(authHeaders as string, SECRET);
       const user = await this.userService.findById(decoded.id);
       client.data.user = user.user; // Attach user data to client
       client.data.user.id = decoded.id;

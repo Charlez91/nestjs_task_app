@@ -10,7 +10,12 @@ import { ITaskRO } from './task.interface';
 import { JwtAuthGuard } from 'src/user/auth.guard';
 
 
-@WebSocketGateway()
+@WebSocketGateway({
+  transports: ['websocket'], pingTimeout: 3000, pingInterval: 5000,
+  namespace: 'ws/task',
+  cors: {
+    origin:["http://localhost:3001", "https://niyo.org", /\.niyo\.org$/],
+    credentials:true}})
 export class TaskGateway implements OnGatewayInit{
 
   @WebSocketServer()
@@ -24,6 +29,15 @@ export class TaskGateway implements OnGatewayInit{
 
   afterInit(server: Server) {
     server.use((socket: Socket, next) => this.wsAuthMiddleware.use(socket, next));
+    console.log('WebSocket server initialized');
+  }
+
+  handleConnection(client: Socket) {
+    console.log('Client connected:', client.id);
+  }
+
+  handleDisconnect(client: Socket) {
+    console.log('Client disconnected:', client.id);
   }
 
   @UseGuards(JwtAuthGuard)

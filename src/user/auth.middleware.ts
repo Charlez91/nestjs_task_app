@@ -42,19 +42,21 @@ export class WsAuthMiddleware implements NestMiddleware {
   ) {}
 
   async use(socket: Socket, next: (err?: any) => void) {
-    const authHeaders = socket.handshake.headers.authorization;
-    if (!authHeaders) {
+    const token = socket.handshake.query.token;
+    if (!token) {
       return next(new UnauthorizedException('No token provided'));
     }
-    const token = (authHeaders as string).split(' ')[1];
+    //const token = (authHeaders as string).split(' ')[1];
+    console.log(token);
 
     try {
-      const decoded:any = verify(token, SECRET);
+      const decoded:any = verify(token as string, SECRET);
       const user = await this.userService.findById(decoded.id);
       socket.data.user = user.user; // Attach user data to socket
       socket.data.user.id = decoded.id
       next();
     } catch (error) {
+      console.error('Auth middleware error:', error);
       return next(new UnauthorizedException('Invalid token'));
     }
   }
