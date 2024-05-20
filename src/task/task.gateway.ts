@@ -49,7 +49,7 @@ export class TaskGateway implements OnGatewayInit{
   ) :Promise<ITaskRO> {
     const user = client.data.user;
     const task = await this.taskService.create(user.id, data);
-    this.server.emit('taskCreated', task);
+    //this.server.emit('taskCreated', task);
     return task;
   }
 
@@ -63,12 +63,12 @@ export class TaskGateway implements OnGatewayInit{
     const user = client.data.user;
     const taskData:UpdateTaskDto = {title:data.title, description: data.description, completed: data.completed}
     const updatedTask = await this.taskService.update(user.id, data.taskId, taskData);
-    this.server.emit('taskUpdated', updatedTask);
+    //this.server.emit('taskUpdated', updatedTask);
     return updatedTask;
   }
 
 
-  emitTaskCreated(task: any):void {
+  emitEvent(task: any):void {
     /**Method to emit events in this case when a task created */
     this.server.emit('taskCreated', task);
   }

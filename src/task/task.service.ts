@@ -5,7 +5,7 @@ import { ITasksRO, ITaskRO, ITaskData } from "./task.interface";
 import { CreateTaskDto, UpdateTaskDto } from "./dto";
 //import { UserService } from "src/user/user.service";
 import { Task } from "@prisma/client";
-//import { TaskGateway } from "./task.gateway";
+import { TaskGateway } from "./task.gateway";
 
 
 /**
@@ -16,7 +16,7 @@ export class TaskService{
     constructor(
         private readonly prisma:PrismaService,
         //private readonly userService:UserService
-        //private readonly taskGateway:TaskGateway
+        private readonly taskGateway:TaskGateway
     ){}
 
     async findAll(
@@ -117,7 +117,7 @@ export class TaskService{
                 data
             });
             // Emit the task created event
-            //this.taskGateway.emitTaskCreated(task);
+            this.taskGateway.server.emit('taskCreated',task);
             return this.buildTaskRO(task!)
         }
     }
@@ -161,7 +161,7 @@ export class TaskService{
             },
             data:taskData
         });
-        //this.taskGateway.emitTaskCreated(updatedTask);
+        this.taskGateway.server.emit("taskUpdated", updatedTask);
         return this.buildTaskRO(updatedTask!);
     }
 

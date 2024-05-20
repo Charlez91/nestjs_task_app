@@ -47,10 +47,10 @@ export class WsAuthMiddleware implements NestMiddleware {
       return next(new UnauthorizedException('No token provided'));
     }
     //const token = (authHeaders as string).split(' ')[1];
-    console.log(token);
+    console.log(token, SECRET);
 
     try {
-      const decoded:any = verify(token as string, SECRET);
+      const decoded:any = verify(`${token}`, SECRET);
       const user = await this.userService.findById(decoded.id);
       socket.data.user = user.user; // Attach user data to socket
       socket.data.user.id = decoded.id
