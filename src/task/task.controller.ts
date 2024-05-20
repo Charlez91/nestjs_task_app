@@ -1,13 +1,16 @@
-import { Body, Controller, Get, Param, Post, Put, Query, Delete } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put, Query, Delete, UsePipes } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { TaskService } from "./task.service";
 import { User } from "src/user/user.decorator";
 import { CreateTaskDto, TasksQueryDto, UpdateTaskDto } from "./dto";
 import { ITaskRO, ITasksRO } from "./task.interface";
+import { ValidationPipe } from "@nestjs/common";
+//import { ValidationPipe } from "src/shared/pipes/validation.pipes";
 
 
 @ApiBearerAuth()
 @ApiTags("tasks")
+@UsePipes(new ValidationPipe({whitelist:true}))
 @Controller("tasks")
 export class TaskController{
     constructor(private readonly taskservice : TaskService){}
@@ -16,7 +19,7 @@ export class TaskController{
     @ApiResponse({ status: 200, description: 'Return all tasks.' })
     @Get()
     async listTasks( 
-        @User("id") userId:string, 
+        @User("id") userId:string,
         @Query() query:TasksQueryDto,
     ):Promise<ITasksRO>{
         /*List All Tasks of current user */
@@ -28,13 +31,11 @@ export class TaskController{
                     ? false
                     : undefined
                 : undefined;
-
-        let limit = query && "limit"in query?+query.limit:20;
+        console.log(query.status)
+        let limit = query && "limit"in query?+query.limit:5;
         let page = query && "page" in query?+query.page:1;
-        let offset = query && "offset" in query?Number(query.offset):undefined;
-        const skip = !!offset?offset:((page-1)*limit);
-        const take = limit        
-        return this.taskservice.findAll(userId, skip, take, completed)
+        let offset = query && "offset" in query?Number(query.offset):undefined;        
+        return this.taskservice.findAll(userId, page, offset, limit, completed)
     }
 
 
@@ -51,7 +52,7 @@ export class TaskController{
         return this.taskservice.findOne(userId, taskId)
     }
 
-    @ApiOperation({ summary: 'Retrieve/Get A Task by ID' })
+    @ApiOperation({ summary: 'Retrieve/Get A Task by Title' })
     @ApiResponse({ status: 200, description: 'Task has been successfully retrieved.' })
     @ApiResponse({ status: 404, description: 'Task Not Found.' })
     @ApiResponse({ status: 403, description: 'Forbidden.' })
@@ -71,7 +72,7 @@ export class TaskController{
     @Post()
     async createTask(
         @User("id") userId:string, 
-        @Body("task") taskData: CreateTaskDto
+        @Body() taskData: CreateTaskDto
     ):Promise<ITaskRO>{
         /* Create A new Task */
         return this.taskservice.create(userId, taskData)
@@ -84,7 +85,7 @@ export class TaskController{
     @Put(":id")
     async updateTask(
         @User("id") userId:string, 
-        @Body("task") taskData:UpdateTaskDto, 
+        @Body() taskData:UpdateTaskDto, 
         @Param("id") taskId: string
     ){
         /**Update Task*/

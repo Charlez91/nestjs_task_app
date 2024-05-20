@@ -3,34 +3,28 @@ import { PrismaService } from "src/prisma_service";
 import { validate } from "class-validator";
 import { ITasksRO, ITaskRO, ITaskData } from "./task.interface";
 import { CreateTaskDto, UpdateTaskDto } from "./dto";
-import { UserService } from "src/user/user.service";
+//import { UserService } from "src/user/user.service";
 import { Task } from "@prisma/client";
+import { TaskGateway } from "./task.gateway";
 
 
+/**
+ * Service responsible for handling task-related operations.
+ */
 @Injectable()
 export class TaskService{
     constructor(
         private readonly prisma:PrismaService,
         //private readonly userService:UserService
+        private readonly taskGateway:TaskGateway
     ){}
 
     async findAll(
-        userId:string, skip:number, 
-        take:number, completed:boolean,
+        userId:string, page:number, offset:number,
+        limit:number, completed:boolean,
     ):Promise<ITasksRO>{
-        /*const userTasks = await this.prisma.user.findUnique({
-            where:{
-                id:userId
-            },
-            select:{
-                tasks:{
-                    orderBy:{
-                        title:'asc'
-                    }
-                }
-            }
-        });*/
-        //alternative
+        const skip = !!offset?offset:((page-1)*limit);
+        const take = limit
         const tasks = this.prisma.task.findMany({
             skip,
             take,
@@ -42,10 +36,15 @@ export class TaskService{
                 title:'asc'
             }
         });
-        const tasksCount = this.prisma.task.count()
+        const tasksCount = this.prisma.task.count({
+            where:{
+                authorId:userId,
+                completed
+            }
+        })
         const [data, total] = await this.prisma.$transaction([tasks, tasksCount])
         let taskList = data.map((task)=>this.buildTaskRO(task));
-        return {tasks:taskList, tasksCount:total} as const;
+        return {tasks:taskList, tasksCount:total, page, offset, limit} as const;
     }
 
     async findOne(userId:string, taskId:string):Promise<ITaskRO>{
@@ -86,10 +85,11 @@ export class TaskService{
         /**
         * Create Task Service Method. To create new tasks 
         */
+       const {title, description} = taskData;
        const taskExists = await this.prisma.task.count({
             where:{
-                title:taskData.title,
-                id:userId,
+                title:title,
+                authorId:userId,
             }
        });
        if(taskExists>0){
@@ -112,28 +112,48 @@ export class TaskService{
             HttpStatus.BAD_REQUEST,
           );
         } else {
+            const data = {...taskData, authorId:userId};
             const task = await this.prisma.task.create({
-                data:taskData
-            })
-            return this.buildTaskRO(task)
+                data
+            });
+            // Emit the task created event
+            this.taskGateway.emitTaskCreated(task);
+            return this.buildTaskRO(task!)
         }
     }
 
     async update(
         userId:string, taskId:string, taskData:UpdateTaskDto
     ):Promise<ITaskRO>{
-        const task = await this.prisma.task.findUnique({
+        const task = await this.prisma.task.findUnique({//check if task exists
             where:{
                 id:taskId,
                 authorId:userId
             }
         });
+        const checkTitle = taskData.title? await this.prisma.task.count({//check for duplicate title in user tasks not currnt task
+            where:{
+                title:taskData.title,
+                authorId:userId,
+                NOT:{
+                    id:taskId
+                }
+            }
+        }):undefined;
+        //const [taskCheck, titleCheck] = await this.prisma.$transaction([task, checkTitle])
         if (!task){
             throw new HttpException({
               'message':'This Task with id does not exist', 
-              'errors':{User:'Not Found'}}, 
+              'errors':{Task:'Not Found'}}, 
               HttpStatus.NOT_FOUND)
         };
+        if (checkTitle && checkTitle>0){
+            throw new HttpException({
+              'message':'One of Your Task with Title already exists.  Choose another title', 
+              'errors':{Task:'Title exist with another task'}}, 
+              HttpStatus.FORBIDDEN)
+        };
+        
         const updatedTask = await this.prisma.task.update({
             where:{
                 id:taskId,
@@ -141,6 +161,7 @@ export class TaskService{
             },
             data:taskData
         });
+        this.taskGateway.emitTaskCreated(updatedTask);
         return this.buildTaskRO(updatedTask!);
     }
 
@@ -153,7 +174,8 @@ export class TaskService{
         if(task && task.authorId==userId){
             return this.prisma.task.delete({
                 where:{
-                    id:userId
+                    id:taskId,
+                    authorId:userId
                 }
             });
         }else{

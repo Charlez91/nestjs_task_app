@@ -1,9 +1,12 @@
 import { HttpException, HttpStatus, Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import {verify} from 'jsonwebtoken';
 import { SECRET } from '../config';
 import { UserService } from './user.service';
 import { IUserData } from './user.interface';
+import { UnauthorizedException } from '@nestjs/common';
+import { Socket } from 'socket.io';
+
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
@@ -13,7 +16,7 @@ export class AuthMiddleware implements NestMiddleware {
     const authHeaders = req.headers.authorization;
     if (authHeaders && (authHeaders as string).split(' ')[1]) {
       const token = (authHeaders as string).split(' ')[1];
-      const decoded: any = jwt.verify(token, SECRET);
+      const decoded: any = verify(token, SECRET);
       const user = await this.userService.findById(decoded.id);
 
       if (!user) {
@@ -25,6 +28,34 @@ export class AuthMiddleware implements NestMiddleware {
       next();
     } else {
       throw new HttpException('Not authorized.', HttpStatus.UNAUTHORIZED);
+    }
+  }
+}
+
+
+// WS Auth MiddleWare to extract socket header authorization
+//token
+@Injectable()
+export class WsAuthMiddleware implements NestMiddleware {
+  constructor(
+        private readonly userService:UserService
+  ) {}
+
+  async use(socket: Socket, next: (err?: any) => void) {
+    const authHeaders = socket.handshake.headers.authorization;
+    if (!authHeaders) {
+      return next(new UnauthorizedException('No token provided'));
+    }
+    const token = (authHeaders as string).split(' ')[1];
+
+    try {
+      const decoded:any = verify(token, SECRET);
+      const user = await this.userService.findById(decoded.id);
+      socket.data.user = user.user; // Attach user data to socket
+      socket.data.user.id = decoded.id
+      next();
+    } catch (error) {
+      return next(new UnauthorizedException('Invalid token'));
     }
   }
 }

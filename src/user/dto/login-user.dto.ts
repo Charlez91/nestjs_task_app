@@ -1,12 +1,6 @@
 import { IsEmail, IsNotEmpty, IsStrongPassword, IsStrongPasswordOptions } from "class-validator";
 
-const passwordOptions: IsStrongPasswordOptions = {
-    minLength:8,
-    minLowercase:1,
-    minUppercase:1,
-    minNumbers:1,
-    minSymbols:1
-}
+import { passwordOptions } from "./create-user.dto";
 
 export class LoginUserDto{
     @IsEmail()

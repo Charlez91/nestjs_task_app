@@ -1,6 +1,4 @@
-import { env } from "process";
 
-
-export const SECRET = env.SECRET_KEY;
-export const DATABASE_URL = env.DATABASE_URL;
-export const PROVIDER = env.PROVIDER
+export const SECRET = process.env.SECRET_KEY;
+export const DATABASE_URL = process.env.DATABASE_URL;
+export const PROVIDER = process.env.PROVIDER

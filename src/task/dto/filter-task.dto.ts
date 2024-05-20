@@ -1,21 +1,25 @@
-import { IsNumberString } from "class-validator";
-
+import { IsEnum, IsNumberString, IsString } from "class-validator";
+//import { PartialType } from "@nestjs/swagger";
+import {PartialType} from "@nestjs/swagger"
 
 enum Status{
     COMPLETED="completed",
     PENDING="pending"
 }
 
-export class TasksQueryDto{
+class QueryDto{
     
-    status?: Status;
+    @IsEnum(Status)
+    readonly status?: Status;
 
     @IsNumberString()
-    page?:number;
+    readonly page?:number;
 
     @IsNumberString()
-    limit?:number;
+    readonly limit?:number;
 
     @IsNumberString()
-    offset?:number;
+    readonly offset?:number;
 }
+
+export class TasksQueryDto extends PartialType(QueryDto){}

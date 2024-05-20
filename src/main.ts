@@ -9,7 +9,7 @@ async function bootstrap() {
 
   const options = new DocumentBuilder()
     .setTitle('Niyo Task App')
-    .setDescription('The Niyo Task App main backend API description/docs')
+    .setDescription('The Niyo Task App backend API for a Task Management App')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

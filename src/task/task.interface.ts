@@ -13,4 +13,7 @@ export interface ITaskRO {
   export interface ITasksRO {
     tasks: ITaskRO[];
     tasksCount: number;
+    page?:number;
+    offset?:number;
+    limit?:number
   }
